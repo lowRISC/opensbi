@@ -377,6 +377,7 @@ int sbi_printf(const char *format, ...)
 int sbi_console_init(struct sbi_scratch *scratch)
 {
 	console_plat = sbi_platform_ptr(scratch);
-
+        console_out_lock.lock = __RISCV_SPIN_UNLOCKED;
+        
 	return sbi_platform_console_init(console_plat);
 }
