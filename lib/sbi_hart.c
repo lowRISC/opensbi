@@ -184,23 +184,6 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	return 0;
 }
 
-int sbi_hart_init(struct sbi_scratch *scratch, u32 hartid)
-{
-	int rc;
-
-	mstatus_init(scratch, hartid);
-
-	rc = fp_init(hartid);
-	if (rc)
-		return rc;
-
-	rc = delegate_traps(scratch, hartid);
-	if (rc)
-		return rc;
-
-	return pmp_init(scratch, hartid);
-}
-
 void __attribute__((noreturn)) sbi_hart_hang(void)
 {
 	while (1)
@@ -293,6 +276,25 @@ struct sbi_scratch *sbi_hart_id_to_scratch(struct sbi_scratch *scratch,
 #define COLDBOOT_WAIT_BITMAP_SIZE	__riscv_xlen
 static spinlock_t coldboot_wait_bitmap_lock = SPIN_LOCK_INITIALIZER;
 static unsigned long coldboot_wait_bitmap = 0;
+
+int sbi_hart_init(struct sbi_scratch *scratch, u32 hartid)
+{
+	int rc;
+        SPIN_LOCK_INIT(&avail_hart_mask_lock);
+        SPIN_LOCK_INIT(&coldboot_wait_bitmap_lock);
+        
+	mstatus_init(scratch, hartid);
+
+	rc = fp_init(hartid);
+	if (rc)
+		return rc;
+
+	rc = delegate_traps(scratch, hartid);
+	if (rc)
+		return rc;
+
+	return pmp_init(scratch, hartid);
+}
 
 void sbi_hart_wait_for_coldboot(struct sbi_scratch *scratch, u32 hartid)
 {

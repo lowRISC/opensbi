@@ -8,6 +8,7 @@
 #include <sbi/sbi_const.h>
 #include <sbi/sbi_platform.h>
 #include <sbi/sbi_hart.h>
+#include <sbi/sbi_console.h>
 
 /*
  * Include these files as needed.
@@ -45,7 +46,16 @@ static int platform_early_init(bool cold_boot)
  */
 static int platform_final_init(bool cold_boot)
 {
-	return 0;
+        void *fdt;
+
+        if (!cold_boot)
+                return 0;
+
+        fdt = sbi_scratch_thishart_arg1_ptr();
+  
+        sbi_printf("platform_final_init, fdt = %p\n", fdt);
+  
+  return 0;
 }
 
 /*

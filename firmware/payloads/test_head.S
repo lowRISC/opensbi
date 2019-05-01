@@ -86,3 +86,18 @@ _boot_a0:
 	RISCV_PTR	0
 _boot_a1:
 	RISCV_PTR	0
+
+        .align 20
+	.globl _kernel
+_kernel:   
+        .incbin "build/platform/lowrisc/ariane/firmware/payloads/Image"
+	.globl _ekernel
+_ekernel:   
+        .align 20
+	.globl _dtb
+_dtb:   
+        .incbin "build/platform/lowrisc/ariane/firmware/payloads/ariane.dtb"
+	.globl _edtb
+_edtb:   
+
+        .align 12
