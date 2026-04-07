@@ -1102,6 +1102,63 @@ int fdt_parse_plmt_node(void *fdt, int nodeoffset, unsigned long *plmt_base,
 	return 0;
 }
 
+int fdt_parse_lowrisc_rvtimer_node(void *fdt, int nodeoffset,
+				   unsigned long *rvtimer_base,
+				   unsigned long *rvtimer_size, u32 *hart_count)
+{
+	const fdt32_t *val;
+	int rc, i, count;
+	uint64_t reg_addr, reg_size;
+	u32 phandle, hwirq, hartid, hcount;
+
+	if (nodeoffset < 0 || !fdt || !rvtimer_base ||
+	    !hart_count || !rvtimer_size)
+		return SBI_EINVAL;
+
+	rc = fdt_get_node_addr_size(fdt, nodeoffset, 0,
+				    &reg_addr, &reg_size);
+	if (rc < 0)
+		return SBI_ENODEV;
+	*rvtimer_base = reg_addr;
+	*rvtimer_size = reg_size;
+
+	val = fdt_getprop(fdt, nodeoffset, "interrupts-extended", &count);
+	if (!val || count < sizeof(fdt32_t))
+		return 0;
+	count = count / sizeof(fdt32_t);
+
+	hcount = 0;
+	for (i = 0; i < (count / 2); i++) {
+		int cpu_offset, cpu_intc_offset;
+
+		phandle = fdt32_to_cpu(val[2 * i]);
+		hwirq = fdt32_to_cpu(val[2 * i + 1]);
+
+		cpu_intc_offset = fdt_node_offset_by_phandle(fdt, phandle);
+		if (cpu_intc_offset < 0)
+			continue;
+
+		cpu_offset = fdt_parent_offset(fdt, cpu_intc_offset);
+		if (cpu_offset < 0)
+			continue;
+
+		rc = fdt_parse_hart_id(fdt, cpu_offset, &hartid);
+
+		if (rc)
+			continue;
+
+		if (SBI_HARTMASK_MAX_BITS <= hartid)
+			continue;
+
+		if (hwirq == IRQ_M_TIMER)
+			hcount++;
+	}
+
+	*hart_count = hcount;
+
+	return 0;
+}
+
 int fdt_parse_plicsw_node(void *fdt, int nodeoffset, unsigned long *plicsw_base,
 			  unsigned long *size, u32 *hart_count)
 {
